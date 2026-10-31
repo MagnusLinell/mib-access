@@ -130,6 +130,21 @@
       .verified-label {font-size:31px;}
     }
     @media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation:none!important; transition:none!important;scroll-behavior:auto!important;} }
+  
+    /* Public landing page denies access until the fictional card ID is supplied. */
+    .portrait-column, .id-grid, .access-indicators { display: none !important; }
+    .terminal-body { grid-template-columns: minmax(0,1fr); min-height: 350px; }
+    body.has-valid-id .terminal-body { grid-template-columns:238px minmax(0,1fr); min-height:0; }
+    body.has-valid-id .portrait-column { display:block !important; }
+    body.has-valid-id .id-grid, body.has-valid-id .access-indicators { display:grid !important; }
+    .verified-label.is-denied { background:none; color:#ff687a; text-shadow: 0 0 38px #ff34552f; }
+    body:not(.has-valid-id) .scan-progress i { background:linear-gradient(90deg,#8c2937,#ff6379); }
+    body:not(.has-valid-id) .check-line strong { color:#ff8092; }
+    @media(max-width:760px) {
+      body.has-valid-id .terminal-body { grid-template-columns:minmax(0,1fr); }
+      body.has-valid-id .portrait-column { display:grid !important; }
+    }
+
   </style>
 </head>
 <body>
@@ -151,7 +166,7 @@
       <div class="terminal-bar"><span><i class="square-dot" aria-hidden="true"></i> MIB / PERSONNEL AUTHENTICATION</span><span>SECURITY PROTOCOL 7746-09</span></div>
       <div class="terminal-body">
         <aside class="portrait-column">
-          <div class="portrait-frame"><img src="assets/agent-m.webp" alt="Agent M based on the original photograph, with dark sunglasses" width="329" height="503"></div>
+          <div class="portrait-frame"><img src="assets/agent-m.webp" alt="Agent M in black suit, black sunglasses and tie" width="329" height="503"></div>
           <div class="portrait-caption"><span>IMAGE MATCH // M</span><span>PERSONNEL RECORD: 009</span></div>
           <div class="barcode" role="img" aria-label="Decorative fictional barcode"></div>
           <div class="barcode-id">MIB-7746-09</div>
@@ -159,7 +174,7 @@
 
         <div class="verification">
           <div class="verified-top">
-            <div><span class="overline" id="scanLabel">IDENTITY CONFIRMED // AUTHORIZED PERSONNEL</span><h2 class="verified-label is-granted" id="statusText" aria-live="polite">ACCESS<br>AUTHORIZED</h2></div>
+            <div><span class="overline" id="scanLabel">IDENTIFICATION REQUIRED</span><h2 class="verified-label is-denied" id="statusText" aria-live="polite">ACCESS<br>DENIED</h2></div>
             <div class="symbol" aria-hidden="true">
               <svg viewBox="0 0 120 120" role="presentation">
                 <circle cx="60" cy="60" r="51"/><ellipse cx="60" cy="60" rx="21" ry="51"/><ellipse cx="60" cy="60" rx="40" ry="51"/>
@@ -167,8 +182,8 @@
               </svg>
             </div>
           </div>
-          <div class="scan-progress" aria-hidden="true"><i id="progressBar"></i></div>
-          <div class="check-line"><span id="scanStep">ALL ACCESS CHECKS COMPLETED</span><strong id="scanPercent">100%</strong></div>
+          <div class="scan-progress" aria-hidden="true"><i id="progressBar" style="width:0%"></i></div>
+          <div class="check-line"><span id="scanStep">NO VALID CREDENTIALS PROVIDED</span><strong id="scanPercent">00%</strong></div>
           <div class="id-grid">
             <div class="field"><small>Agent designation</small><b>AGENT M</b></div>
             <div class="field"><small>Personnel ID</small><b>MIB-7746-09</b></div>
@@ -191,45 +206,58 @@
     <footer class="footer"><span>MIB // EARTH IS UNDER OUR PROTECTION.</span><span>FICTIONAL HALLOWEEN PROP · NO REAL ACCESS VERIFICATION IS PERFORMED.</span></footer>
   </main>
   <script>
-    (() => {
-      'use strict';
-      const status = document.getElementById('statusText');
-      const label = document.getElementById('scanLabel');
-      const step = document.getElementById('scanStep');
-      const percent = document.getElementById('scanPercent');
-      const bar = document.getElementById('progressBar');
-      const replay = document.getElementById('replayBtn');
-      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      let timeouts = [];
-      function later(fn, ms) { timeouts.push(window.setTimeout(fn, ms)); }
-      function finish() {
-        label.textContent = 'IDENTITY CONFIRMED // AUTHORIZED PERSONNEL';
-        status.className = 'verified-label is-granted';
-        status.innerHTML = 'ACCESS<br>AUTHORIZED';
-        step.textContent = 'ALL ACCESS CHECKS COMPLETED';
-        percent.textContent = '100%';
-        bar.style.width = '100%';
-        replay.disabled = false;
-      }
-      function scan() {
-        timeouts.forEach(clearTimeout);
-        timeouts = [];
-        if (reduceMotion) { finish(); return; }
-        replay.disabled = true;
-        label.textContent = 'ENCRYPTED CHANNEL // VERIFYING CREDENTIALS';
-        status.className = 'verified-label is-checking';
-        status.innerHTML = 'SCANNING<br>AGENT ID';
-        bar.style.width = '7%';
-        step.textContent = 'ESTABLISHING SECURE CONNECTION';
-        percent.textContent = '07%';
-        later(() => { step.textContent = 'READING PERSONNEL RECORD'; percent.textContent = '31%'; bar.style.width = '31%'; }, 550);
-        later(() => { step.textContent = 'MATCHING BIOMETRIC SIGNATURE'; percent.textContent = '63%'; bar.style.width = '63%'; }, 1150);
-        later(() => { step.textContent = 'CONFIRMING LEVEL IX CLEARANCE'; percent.textContent = '91%'; bar.style.width = '91%'; }, 1900);
-        later(finish, 2650);
-      }
-      replay.addEventListener('click', scan);
-      scan();
-    })();
+  (() => {
+    'use strict';
+    // Halloween prop only: this is a visual check of a public URL parameter,
+    // not real authentication or access control.
+    const APPROVED_ID = 'MIB-7746-09';
+    const approved = new URLSearchParams(window.location.search).get('id') === APPROVED_ID;
+    document.body.classList.toggle('has-valid-id', approved);
+    const status = document.getElementById('statusText');
+    const label = document.getElementById('scanLabel');
+    const step = document.getElementById('scanStep');
+    const percent = document.getElementById('scanPercent');
+    const bar = document.getElementById('progressBar');
+    const replay = document.getElementById('replayBtn');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let pending = [];
+    function after(fn,ms) { pending.push(window.setTimeout(fn,ms)); }
+    function deny() {
+      label.textContent = 'INVALID OR MISSING AGENT CREDENTIALS';
+      status.className = 'verified-label is-denied';
+      status.innerHTML = 'ACCESS<br>DENIED';
+      step.textContent = 'AUTHENTICATION FAILED // RESTRICTED';
+      percent.textContent = '00%';
+      bar.style.width = '0%';
+      replay.disabled = false;
+    }
+    function grant() {
+      label.textContent = 'IDENTITY CONFIRMED // AGENT M';
+      status.className = 'verified-label is-granted';
+      status.innerHTML = 'ACCESS<br>AUTHORIZED';
+      step.textContent = 'WELCOME, AGENT M // LEVEL IX VERIFIED';
+      percent.textContent = '100%';
+      bar.style.width = '100%';
+      replay.disabled = false;
+    }
+    function scan() {
+      pending.forEach(clearTimeout); pending=[];
+      if (!approved) { deny(); return; }
+      if (reduceMotion) { grant(); return; }
+      replay.disabled = true;
+      label.textContent = 'ENCRYPTED CHANNEL // VERIFYING AGENT M';
+      status.className = 'verified-label is-checking';
+      status.innerHTML = 'SCANNING<br>AGENT ID';
+      bar.style.width = '7%';
+      step.textContent = 'INITIALIZING PERSONNEL MATCH';
+      percent.textContent = '07%';
+      after(() => {step.textContent='READING AGENT M RECORD';percent.textContent='35%';bar.style.width='35%';},500);
+      after(() => {step.textContent='CONFIRMING LEVEL IX CLEARANCE';percent.textContent='76%';bar.style.width='76%';},1250);
+      after(grant,2100);
+    }
+    replay.addEventListener('click',scan);
+    scan();
+  })();
   </script>
 </body>
 </html>
